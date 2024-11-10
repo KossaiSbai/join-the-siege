@@ -1,6 +1,7 @@
+import os
 from flask import Flask, request, jsonify
 
-from src.classifier import classify_file
+from src.classifier import classify_document, sbert_class_embeddings, clip_class_embeddings
 app = Flask(__name__)
 
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg'}
@@ -19,11 +20,18 @@ def classify_file_route():
         return jsonify({"error": "No selected file"}), 400
 
     if not allowed_file(file.filename):
-        return jsonify({"error": f"File type not allowed"}), 400
+        return jsonify({"error": "File type not allowed"}), 400
 
-    file_class = classify_file(file)
-    return jsonify({"file_class": file_class}), 200
+    file_path = os.path.join("/tmp", file.filename)
+    file.save(file_path)
 
+    file_type = file.filename.rsplit('.', 1)[1].lower()
+
+    file_class, confidence, scores = classify_document(file_path, file_type, sbert_class_embeddings, clip_class_embeddings)
+
+    os.remove(file_path)
+
+    return jsonify({"file_class": file_class, "confidence": str(confidence)}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)

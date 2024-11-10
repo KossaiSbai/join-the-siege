@@ -1,3 +1,17 @@
 Flask==3.0.3
 pytest==8.3.3
 pytest-mock==3.14.0
+torch  # PyTorch, install with pip
+openai  # OpenAI API package
+Pillow  # For working with images, corresponds to `from PIL import Image`
+scikit-learn  # Provides cosine_similarity in sklearn
+numpy  # For numerical operations
+docx2txt  # For extracting text from .docx files
+logging  # Standard library, no need to install
+typing-extensions  # For advanced typing utilities
+redis  # For Redis interaction
+python-dotenv  # For loading environment variables from .env files
+sentence-transformers  # For SentenceTransformer model
+clip @ git+https://github.com/openai/CLIP.git@dcba3cb2e2827b402d2701e7e1c7d9fed8a20ef1
+pandas
+PyPDF2

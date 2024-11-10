@@ -1,76 +1,96 @@
-# Heron Coding Challenge - File Classifier
+# Approach for Document Classification Using Embeddings and Similarity Metrics
 
-## Overview
+This document classification approach leverages pre-trained embeddings and similarity metrics rather than large, labeled datasets or retraining cycles, allowing for efficient and scalable document categorization. By using pre-trained models like CLIP and Sentence Transformers, it can classify documents (e.g., bank statements, driver’s licenses) based on semantic understanding, comparing embeddings of document content with predefined class descriptions and keywords, and identifying the best match through cosine similarity. This eliminates the need for extensive data collection and resource-intensive model training while enabling flexible, accurate classification.
 
-At Heron, we’re using AI to automate document processing workflows in financial services and beyond. Each day, we handle over 100,000 documents that need to be quickly identified and categorised before we can kick off the automations.
+Adding new document types or expanding into different industries (e.g., from finance to healthcare) requires only generating new keywords and descriptions specific to the new category, bypassing the need for domain-specific training. 
 
-This repository provides a basic endpoint for classifying files by their filenames. However, the current classifier has limitations when it comes to handling poorly named files, processing larger volumes, and adapting to new industries effectively.
+This method is computationally efficient and scales well to high document volumes by performing lightweight embedding generation and similarity calculations. 
 
-**Your task**: improve this classifier by adding features and optimisations to handle (1) poorly named files, (2) scaling to new industries, and (3) processing larger volumes of documents.
+## 1. Class Description and Keyword Generation
 
-This is a real-world challenge that allows you to demonstrate your approach to building innovative and scalable AI solutions. We’re excited to see what you come up with! Feel free to take it in any direction you like, but we suggest:
+### OpenAI GPT Models
+The system uses OpenAI's GPT models to generate detailed descriptions and relevant keywords for each document category.
 
+### CLIP Model Descriptions
+Descriptions are specifically generated for the `CLIP` model because CLIP has been trained on image-description (text-image pair) data. These descriptions provide contextual information that aligns with the image-based training of CLIP, enhancing its ability to accurately classify image documents.
 
-### Part 1: Enhancing the Classifier
+### Sentence Transformer Keywords
+Since Sentence Transformers are text-to-text models, generating full descriptive sentences could introduce too many irrelevant words, potentially diluting the model's effectiveness. Towards addressing this, the system generates concise keywords for each category. These keywords focus on the most relevant terms, ensuring that the text-based model remains precise and efficient in classification without being overwhelmed by unnecessary information.
 
-- What are the limitations in the current classifier that's stopping it from scaling?
-- How might you extend the classifier with additional technologies, capabilities, or features?
+### Example-Based Keyword Generation
+To enhance the relevance and accuracy of the generated keywords, the system provides text from an example file to the model. This context helps the model understand the specific characteristics and content of each document category, leading to the generation of more targeted and meaningful keywords.
 
+### Caching with Redis
+Generated descriptions and keywords are cached in Redis. By caching frequently used embeddings and descriptions with Redis, the system minimizes repetitive computations, further improving its capacity to handle large volumes without compromising performance.
 
-### Part 2: Productionising the Classifier 
+## 2. Embedding Generation
 
-- How can you ensure the classifier is robust and reliable in a production environment?
-- How can you deploy the classifier to make it accessible to other services and users?
+### Sentence Transformers
+For textual data, the system uses the `SentenceTransformer` model to generate embeddings from the extracted text. By utilising keywords, the embeddings are more focused and relevant.
 
-We encourage you to be creative! Feel free to use any libraries, tools, services, models or frameworks of your choice
+### CLIP Model
+For image data, the system utilizes OpenAI's CLIP model to generate image embeddings based on the generated descriptions tailored for image-text alignment.
 
-### Possible Ideas / Suggestions
-- Train a classifier to categorize files based on the text content of a file
-- Generate synthetic data to train the classifier on documents from different industries
-- Detect file type and handle other file formats (e.g., Word, Excel)
-- Set up a CI/CD pipeline for automatic testing and deployment
-- Refactor the codebase to make it more maintainable and scalable
+### Class Embeddings
+Class embeddings are created by averaging the embeddings of generated descriptions and keywords for each category, ensuring a robust representation for comparison during classification.
 
-## Marking Criteria
-- **Functionality**: Does the classifier work as expected?
-- **Scalability**: Can the classifier scale to new industries and higher volumes?
-- **Maintainability**: Is the codebase well-structured and easy to maintain?
-- **Creativity**: Are there any innovative or creative solutions to the problem?
-- **Testing**: Are there tests to validate the service's functionality?
-- **Deployment**: Is the classifier ready for deployment in a production environment?
+## 3. Document Processing
 
+### Text Extraction
+The system includes functions to extract text from PDFs, Word documents, and Excel files.
 
-## Getting Started
-1. Clone the repository:
-    ```shell
-    git clone <repository_url>
-    cd heron_classifier
-    ```
+### Preprocessing
+Extracted text is preprocessed to remove headers, footers, special characters, and extra whitespace, ensuring clean and consistent input for embedding generation.
 
-2. Install dependencies:
-    ```shell
-    python -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-    ```
+### Normalization
+Both text and image embeddings are normalized to ensure consistent similarity computations, facilitating accurate classification.
 
-3. Run the Flask app:
-    ```shell
+## 4. Classification
+
+### Cosine Similarity
+The system calculates the cosine similarity between the document embeddings and class embeddings to determine the closest matching category.
+
+### Thresholding
+A similarity threshold determines whether a document is confidently classified into a category or marked as "unknown," providing flexibility in handling ambiguous cases.
+
+### API Endpoint
+A Flask application provides an API endpoint (`/classify_file`) for uploading and classifying documents, enabling easy integration and usage.
+
+## 5. Supported File Types
+The system supports the following file extensions:
+
+Text Documents: pdf, docx, xlsx\
+Image Files: jpg, png
+
+# Instructions to Run the Solution
+
+## 1. Prerequisites
+
+- **Python 3.7 or Higher**
+- **Redis Server**: Ensure Redis is installed and running.
+- **Environment Variables**: Set up a `.env` file or environment variables with the following keys:
+  - `OPENAI_API_KEY`: Your OpenAI API key.
+  - `REDIS_HOST`: Hostname for the Redis server.
+  - `REDIS_PORT`: Port for the Redis server.
+  - `REDIS_PASSWORD`: Password for Redis if required.
+
+## 2. Install Dependencies
+
+Install the required Python packages using `pip`:
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+## 3. Run the Flask app:
     python -m src.app
-    ```
 
-4. Test the classifier using a tool like curl:
-    ```shell
+## 4. Test the classifier using a tool like curl:
     curl -X POST -F 'file=@path_to_pdf.pdf' http://127.0.0.1:5000/classify_file
-    ```
 
-5. Run tests:
+## 5. Run tests:
    ```shell
     pytest
-    ```
-
-## Submission
-
-Please aim to spend 3 hours on this challenge.
-
-Once completed, submit your solution by sharing a link to your forked repository. Please also provide a brief write-up of your ideas, approach, and any instructions needed to run your solution. 
+   ```
