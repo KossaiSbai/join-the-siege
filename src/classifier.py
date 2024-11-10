@@ -165,7 +165,7 @@ def get_sbert_class_embeddings(sbert_model, document_classes):
 
 
 
-def classify_text_document(text, class_embeddings, model, threshold=0.3):
+def classify_text_document(text, class_embeddings, model, threshold=0.2):
     embedding = model.encode(text, normalize_embeddings=True)
     similarities = {cls: cosine_similarity([embedding], [emb])[0][0] for cls, emb in class_embeddings.items()}
     best_class = max(similarities, key=similarities.get)
@@ -176,7 +176,7 @@ def classify_text_document(text, class_embeddings, model, threshold=0.3):
         return 'unknown', best_similarity, similarities
 
 
-def classify_image_document(image_path, class_embeddings, model, preprocess, device, threshold=0.3):
+def classify_image_document(image_path, class_embeddings, model, preprocess, device, threshold=0.2):
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file not found: {image_path}")
     
